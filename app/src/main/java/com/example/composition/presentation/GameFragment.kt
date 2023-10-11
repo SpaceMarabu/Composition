@@ -1,30 +1,51 @@
 package com.example.composition.presentation
 
+import android.annotation.SuppressLint
+import android.content.res.ColorStateList
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.*
 import com.example.composition.R
-import com.example.composition.databinding.FragmentChoseLevelBinding
 import com.example.composition.databinding.FragmentGameBinding
 import com.example.composition.domain.entity.GameResult
-import com.example.composition.domain.entity.GameSettings
 import com.example.composition.domain.entity.Level
 import com.example.composition.domain.entity.Question
 
 class GameFragment : Fragment() {
 
-    private lateinit var level: Level
-    private lateinit var gameSettings: GameSettings
+    private val viewModel: GameViewModel by lazy {
+        ViewModelProvider(this, viewModelFactory)[GameViewModel::class.java]
+    }
+
+    private val viewModelFactory: GameViewModelFactory by lazy {
+        GameViewModelFactory(level, requireActivity().application)
+    }
+
+    private val tvOptions by lazy {
+        mutableListOf<TextView>().apply {
+            add(binding.tvOption1)
+            add(binding.tvOption2)
+            add(binding.tvOption3)
+            add(binding.tvOption4)
+            add(binding.tvOption5)
+            add(binding.tvOption6)
+        }
+    }
+
     private lateinit var question: Question
-    private lateinit var viewModel: GameViewModel
-    private var textProgress = ""
-    private var textProgressMask = ""
-    private var minCountOfRightAnswers: Int = -1
-    private var countOfRightAnswers: Int = 0
+
+    private lateinit var level: Level
+
+    private var percentOfRightAnswers: Int = 0
+    private var answer: Int = -1
 
     private var _binding: FragmentGameBinding? = null
     private val binding: FragmentGameBinding
@@ -43,72 +64,72 @@ class GameFragment : Fragment() {
         return binding.root
     }
 
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel = ViewModelProvider(this)[GameViewModel::class.java]
-        observeGameSettings()
-//        binding.tvLeftNumber.setOnClickListener {
-//            launchFragmentGameFinished(GameResult(
-//                true,
-//                0,
-//                0,
-//                GameSettings(
-//                    0,
-//                    0,
-//                    0,
-//                    0
-//                )
-//            ))
-//        }
+        observeVars()
+        setOnNumberClickListeners()
+        viewModel.getGameSettings()
     }
 
-    private fun setOnClickListeners() {
-        binding.tvOption1.setOnClickListener {
-
-            if (checkAnswer(binding.tvOption1.text.toString())) {
-                countOfRightAnswers = countOfRightAnswers + 1
-
+    private fun setOnNumberClickListeners() {
+        for (i in 0 until tvOptions.size) {
+            tvOptions[i].setOnClickListener {
+                answer = tvOptions[i].text.toString().toInt()
+                viewModel.choseAnswer(answer)
             }
         }
     }
 
-    private fun checkAnswer(userAnswer: String): Boolean {
-        return viewModel.checkAnswer(
-            userAnswer,
-            binding.tvLeftNumber.text.toString(),
-            question.sum.toString()
-        )
-    }
 
-    private fun observeGameSettings() {
-        viewModel.getGameSettings(level)
-        viewModel.gameSettings.observe(viewLifecycleOwner) {
-            gameSettings = it
-            viewModel.getQuestion(it.maxSumValue)
+    private fun observeVars() {
+        viewModel.formattedTime.observe(viewLifecycleOwner) {
+            binding.tvTimer.text = it.toString()
         }
         viewModel.question.observe(viewLifecycleOwner) {
             question = it
-            initViews()
+            initViewsQuestion()
+        }
+        viewModel.percentOfRightAnswers.observe(viewLifecycleOwner) {
+            percentOfRightAnswers = it
+            binding.progressBar.setProgress(it, true)
+        }
+        viewModel.progressAnswers.observe(viewLifecycleOwner) {
+            binding.tvAnswersProgress.text = it.toString()
+        }
+        viewModel.gameResult.observe(viewLifecycleOwner) {
+            launchFragmentGameFinished(it)
+        }
+        viewModel.minPercent.observe(viewLifecycleOwner) {
+            binding.progressBar.secondaryProgress = it
+        }
+        viewModel.enoughCount.observe(viewLifecycleOwner) {
+            val color = getColorByState(it)
+            binding.tvAnswersProgress.setTextColor(color)
+        }
+        viewModel.enoughPercent.observe(viewLifecycleOwner) {
+            val color = getColorByState(it)
+            binding.progressBar.progressTintList = ColorStateList.valueOf(color)
         }
     }
 
-    private fun initViews() {
+    private fun getColorByState(state: Boolean): Int {
+        val colorResId = if (state) {
+            android.R.color.holo_green_light
+        } else {
+            android.R.color.holo_red_light
+        }
+        return ContextCompat.getColor(requireContext(), colorResId)
+    }
+
+    private fun initViewsQuestion() {
         binding.tvSum.text = question.sum.toString()
         binding.tvLeftNumber.text = question.visibleNumber.toString()
-        binding.tvOption1.text = question.options[0].toString()
-        binding.tvOption2.text = question.options[1].toString()
-        binding.tvOption3.text = question.options[2].toString()
-        binding.tvOption4.text = question.options[3].toString()
-        binding.tvOption5.text = question.options[4].toString()
-        binding.tvOption6.text = question.options[5].toString()
-        textProgressMask = resources.getString(R.string.progress_answers)
-        textProgress = String.format(
-            textProgressMask,
-            countOfRightAnswers,
-            gameSettings.minCountOfRightAnswers
-        )
-        binding.tvAnswersProgress.text = textProgress
+        for (i in 0 until tvOptions.size) {
+            tvOptions[i].text = question.options[i].toString()
+        }
     }
+
 
     private fun launchFragmentGameFinished(gameResult: GameResult) {
         requireActivity().supportFragmentManager.beginTransaction()

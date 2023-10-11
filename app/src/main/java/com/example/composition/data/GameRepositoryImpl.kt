@@ -10,11 +10,14 @@ import kotlin.random.Random
 
 object GameRepositoryImpl : GameRepository {
 
-    private const val MIN_SUM_VALUE = 2
+    private const val MIN_SUM_VALUE = 3
     private const val MIN_ANSWER_VALUE = 2
 
     override fun generateQuestion(maxSumValue: Int, countOfOptions: Int): Question {
         val sum = Random.nextInt(MIN_SUM_VALUE, maxSumValue + 1)
+//        if (sum < MIN_ANSWER_VALUE + 1) {
+//            sum = MIN_ANSWER_VALUE + 1
+//        }
         val visibleNumber = Random.nextInt(MIN_ANSWER_VALUE, sum)
         val options = HashSet<Int>()
         val rightAnswer = sum - visibleNumber
@@ -34,7 +37,7 @@ object GameRepositoryImpl : GameRepository {
                     10,
                     3,
                     50,
-                    8
+                    3
                 )
             }
             Level.EASY -> {
