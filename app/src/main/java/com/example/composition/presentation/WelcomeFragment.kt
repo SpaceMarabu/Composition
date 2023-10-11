@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.example.composition.R
 import com.example.composition.databinding.FragmentWelcomeBinding
 
@@ -30,10 +31,7 @@ class WelcomeFragment : Fragment() {
     }
 
     private fun launchChoseLevelFragment() {
-        requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.main_container, ChoseLevelFragment.newInstance())
-            .addToBackStack(ChoseLevelFragment.NAME)
-            .commit()
+        findNavController().navigate(R.id.action_welcomeFragment_to_choseLevelFragment)
     }
 
     override fun onDestroyView() {
