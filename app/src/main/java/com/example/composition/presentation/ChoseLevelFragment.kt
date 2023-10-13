@@ -1,22 +1,16 @@
 package com.example.composition.presentation
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.example.composition.R
 import com.example.composition.databinding.FragmentChoseLevelBinding
-import com.example.composition.databinding.FragmentWelcomeBinding
 import com.example.composition.domain.entity.Level
-import java.lang.RuntimeException
 
 
 class ChoseLevelFragment : Fragment() {
-
-    private lateinit var viewModel: GameViewModel
 
     private var _binding: FragmentChoseLevelBinding? = null
     private val binding: FragmentChoseLevelBinding
@@ -33,10 +27,10 @@ class ChoseLevelFragment : Fragment() {
 
 
     private fun launchGameByLevel(level: Level) {
-        val args = Bundle().apply {
-            putParcelable(GameFragment.KEY_LEVEL, level)
-        }
-        findNavController().navigate(R.id.action_choseLevelFragment_to_gameFragment, args)
+
+        findNavController().navigate(
+            ChoseLevelFragmentDirections.actionChoseLevelFragmentToGameFragment(level)
+        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -66,11 +60,4 @@ class ChoseLevelFragment : Fragment() {
         _binding = null
     }
 
-    companion object {
-
-        const val NAME = "ChoseLevelFragment"
-        fun newInstance(): ChoseLevelFragment {
-            return ChoseLevelFragment()
-        }
-    }
 }
